@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <numeric>
 #include <iostream>
+#include "StatisticalVector.h"
 
 using namespace std;
 
@@ -28,6 +29,7 @@ public:
 	Matrix Adjoint();
 	Matrix Inverse();
 	void PrintMatrix();
+	StatVec diag();
 
 	Matrix operator+(Matrix &B);
 	Matrix operator*(Matrix &B);

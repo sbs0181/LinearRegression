@@ -22,31 +22,31 @@ vector<double> SubtractTwoVectors(vector<double> v1, vector<double> v2) {
 }
 
 double VectorDotProduct(vector<double> v1, vector<double> v2) {
-	vector<double> v3;
-	transform(v1.begin(), v1.end(), v2.begin(), v3.begin(), plus<double>());
+	vector<double> v3 (v1.size());
+	transform(v1.begin(), v1.end(), v2.begin(), v3.begin(), multiplies<double>());
 	return accumulate(v3.begin(), v3.end(), 0.0);
 }
 
 /* Matrix stuff*/
 
 vector<double> Matrix::Row(int i) {
-	return this->M[i];
+	return M[i];
 }
 
 vector<double> Matrix::Col(int i) {
 	vector<double> ColVec;
-	int nrows = this->M.size();
+	int nrows = M.size();
 	for (int j = 0; j < nrows; j++) {
-		ColVec.push_back(this->M[j][i]);
+		ColVec.push_back(M[j][i]);
 	}
 	return ColVec;
 }
 
 Matrix Matrix::Transpose() {
 	Matrix C;
-	int ncols = this->M[0].size();
+	int ncols = M[0].size();
 	for (int i = 0; i < ncols; i++) {
-		C.M.push_back(this->Col(i));
+		C.M.push_back(Col(i));
 	}
 	return C;
 }
@@ -54,8 +54,8 @@ Matrix Matrix::Transpose() {
 Matrix Matrix::PrincipalMinor(int i, int j) {
 	Matrix C;
 	vector<double> EmptyVector;
-	int nrows = this->M.size();
-	int ncols = this->M[0].size();
+	int nrows = M.size();
+	int ncols = M[0].size();
 	int indexk = 0;
 	for (int k = 0; k < nrows; k++) {
 		if (k != i) {
@@ -64,7 +64,7 @@ Matrix Matrix::PrincipalMinor(int i, int j) {
 			for (int l = 0; l < ncols; l++) {
 				if (l != j) {
 
-					C.M[indexk].push_back(this->M[k][l]);
+					C.M[indexk].push_back(M[k][l]);
 				}
 			}
 			indexk += 1;
@@ -75,7 +75,7 @@ Matrix Matrix::PrincipalMinor(int i, int j) {
 
 double Matrix::Determinant() {
 	double det;
-	vector<vector<double>>mat = this->M;
+	vector<vector<double>>mat = M;
 	int nrows = mat.size();
 	if (nrows == 1) {
 		det = mat[0][0];
@@ -86,7 +86,7 @@ double Matrix::Determinant() {
 	else {
 		det = 0.0;
 		for (int i = 0; i < nrows; i++) {
-			det += ((double)pow(-1, i))*mat[0][i] * (this->PrincipalMinor(0, i)).Determinant();
+			det += ((double)pow(-1, i))*mat[0][i] * ((PrincipalMinor(0, i)).Determinant());
 		}
 
 	}
@@ -96,12 +96,12 @@ double Matrix::Determinant() {
 Matrix Matrix::Adjoint() {
 	Matrix C;
 	vector<double> EmptyVector;
-	int nrows = this->M.size();
-	int ncols = this->M[0].size();
+	int nrows = M.size();
+	int ncols = M[0].size();
 	for (int i = 0; i < nrows; i++) {
 		C.M.push_back(EmptyVector);
 		for (int j = 0; j < ncols; j++) {
-			C.M[i].push_back(pow(-1, i - j)*(this->PrincipalMinor(i, j).Determinant()));
+			C.M[i].push_back(pow(-1, i - j)*(PrincipalMinor(i, j).Determinant()));
 		}
 	}
 	return C;
@@ -120,25 +120,33 @@ Matrix Matrix::operator*(const double &c) {
 }
 
 Matrix Matrix::Inverse() {
-	return (this->Adjoint())*pow(this->Determinant(), -1.0);
+	return (Adjoint().Transpose())*pow(Determinant(), -1.0);
 }
 
 void Matrix::PrintMatrix() {
-	int nrows = this->M.size();
-	int ncols = this->M[0].size();
+	int nrows = M.size();
+	int ncols = M[0].size();
 	for (int i = 0; i < nrows; i++) {
 		for (int j = 0; j < ncols; j++) {
-			cout << this->M[i][j] << ",";
+			cout << M[i][j] << ",";
 		}
 		cout << "\n";
 	}
 }
 
+StatVec Matrix::diag() {
+	StatVec vec;
+	for (int i = 0; i < M.size(); i++) {
+		vec.v.push_back(M[i][i]);
+	}
+	return vec;
+}
+
 Matrix Matrix::operator+(Matrix &B) {
 	Matrix C;
-	int nrows = this->M.size();
+	int nrows = M.size();
 	for (int i = 0; i < nrows; i++) {
-		C.M.push_back(AddTwoVectors(this->Row(i), B.Row(i)));
+		C.M.push_back(AddTwoVectors(Row(i), B.Row(i)));
 	}
 	return C;
 }
@@ -146,14 +154,14 @@ Matrix Matrix::operator+(Matrix &B) {
 Matrix Matrix::operator*(Matrix &B) {
 	Matrix C;
 	vector<double> EmptyVector;
-	int nrowsA = this->M.size();
-	int ncolsA = this->M[0].size();
-	int nrowsB = B.M.size();
-	int ncolsB = B.M[0].size();
+	int nrowsA = M.size();//p
+	int ncolsA = M[0].size();//N
+	int nrowsB = B.M.size();//N
+	int ncolsB = B.M[0].size();//p
 	for (int i = 0; i < nrowsA; i++) {
 		C.M.push_back(EmptyVector);
-		for (int j = 0; j < ncolsB; j++) {
-			C.M[i].push_back(VectorDotProduct(this->Row(i), B.Col(j)));
+		for (int j = 0; j < ncolsB; j++){
+			C.M[i].push_back(VectorDotProduct(Row(i), B.Col(j)));
 		}
 	}
 	return C;
@@ -163,9 +171,9 @@ Matrix Matrix::operator*(Matrix &B) {
 
 Matrix Matrix::operator-(Matrix &B) {
 	Matrix C;
-	int nrows = this->M.size();
+	int nrows = M.size();
 	for (int i = 0; i < nrows; i++) {
-		C.M.push_back(SubtractTwoVectors(this->Row(i), B.Row(i)));
+		C.M.push_back(SubtractTwoVectors(Row(i), B.Row(i)));
 	}
 	return C;
 }

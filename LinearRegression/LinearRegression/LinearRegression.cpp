@@ -7,123 +7,26 @@
 #include <numeric>
 #include "Matrices.h"
 #include "Random.h"
+#include "StatisticalVector.h"
+#include "LinearModel.h"
 
 using namespace std;
-
-class vec {
-public:
-	vector<double> v;
-	
-	int size();
-	void print();
-	double sum();
-	double mean();
-	double var();
-	double sd();
-
-
-	vec operator+(vec& b);
-	double operator*(vec& b);
-	vec operator+(const double& c);
-	vec operator*(const double& c);
-};
-
-vec ElementwiseMultiply(vec a, vec b) {
-	vector<double> av = a.v;
-	vector<double> bv = b.v;
-	vector<double> cv (av.size());
-	transform(av.begin(), av.end(), bv.begin(), cv.begin(), multiplies<double>());
-	vec c;
-	c.v = cv;
-	return c;
-}
-
-double Cov(vec a, vec b) {
-	vec ab = ElementwiseMultiply(a, b);
-	return ab.mean() - (a.mean())*(b.mean());
-}
-
-double Corr(vec a, vec b) {
-	return Cov(a, b) / (a.sd()*b.sd());
-}
-
-int vec::size() {
-	return this->v.size();
-}
-
-void vec::print() {
-	for (int i = 0; i < this->size(); i++) {
-		cout << this->v[i] << " , ";
-	}
-	cout << "\n";
-}
-
-double vec::sum() {
-	vector<double> v = this->v;
-	return accumulate(v.begin(), v.end(), 0.0);
-}
-
-double vec::mean() {
-	return (this->sum()) / (this->size());
-}
-
-double vec::var() {
-	vec vec2 = ElementwiseMultiply(*this, *this);
-	return vec2.mean() - pow(this->mean(), 2.0);
-}
-
-double vec::sd() {
-	return sqrt(this->var());
-}
-
-vec vec::operator+(vec &b) {
-	vector<double> av = this->v;
-	vector<double> bv = b.v;
-	vector<double> cv (b.v.size());
-	transform(av.begin(), av.end(), bv.begin(), cv.begin(), plus<double>());
-	vec c;
-	c.v = cv;
-	return c;
-}
-
-double vec::operator*(vec& b) {
-	vector<double> av = this->v;
-	vector<double> bv = b.v;
-	vector<double> cv (bv.size());
-	transform(av.begin(), av.end(), bv.begin(), cv.begin(), plus<double>());
-	return accumulate(cv.begin(),cv.end(),0.0);
-}
-
-vec vec::operator+(const double& c) {
-	vector<double> av = this->v;
-	vector<double> bv (av.size());
-	transform(av.begin(), av.end(), bv.begin(), [&c] (double x) {return c+x; });
-	vec b;
-	b.v = bv;
-	return b;
-}
-
-vec vec::operator*(const double& c) {
-	vector<double> av = this->v;
-	vector<double> bv (av.size());
-	transform(av.begin(), av.end(), bv.begin(), [&c](double x) {return c*x; });
-	vec b;
-	b.v = bv;
-	return b;
-}
 
 
 int main()
 {
 	SetSeed();
-	vec X;
-	X.v = NormRnd(0.0, 1.0, 50);
-	X.print();
-	vec Err;
-	Err.v= NormRnd(0.0, 10.0, 50);
-	vec Y = ((X*3.0) + 1.0)+Err;
-	Y.print();
-	cout << X.var();
+	StatVec X1;
+	X1.v = UnifRnd(0.0, 1.0, 100);
+	StatVec X2;
+	X2.v = UnifRnd(3.0, 5.0, 100);
+	Matrix Xmat = MatrixFromStatVecs({ ones(100),X1,X2 });
+	StatVec Err;
+	Err.v= NormRnd(0.0, 0.01, 100);
+	StatVec Y = ((X1*0.0) + (X2*5.0) + 10.0) + Err;
+	LinearModel mod ( { ones(100),X1,X2 }, Y );
+	cout << mod.betav[0] << " , " << mod.betav[1] << " , " << mod.betav[2] << "\n";
+	cout << mod.beta.v[0] << " , " << mod.beta.v[1] << " , " << mod.beta.v[2] << "\n";
 	system("pause");
     return 0;
 }
